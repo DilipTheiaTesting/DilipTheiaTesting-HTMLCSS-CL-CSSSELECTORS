@@ -551,12 +551,17 @@ System.out.println("Page loaded successfully");
         System.out.println("Teardown completed");
     }
 
-    @Test
-    public void testIdSelector() {
+@Test
+public void testIdSelector() {
+    try {
         WebElement p2 = webDriver.findElement(By.id("p2"));
         String color = p2.getCssValue("color");
-        assertEquals("rgba(255, 0, 0, 1)", p2.getCssValue("color"));
+        assertEquals("rgba(255, 0, 0, 1)", color);
+    } catch (Exception e) {
+        fail("Error checking color of #p2: " + e.getMessage());
     }
+}
+
 
 
 
