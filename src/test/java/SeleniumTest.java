@@ -546,6 +546,7 @@ public class SeleniumTest {
     @Test
     public void testIdSelector() {
         WebElement p2 = webDriver.findElement(By.id("p2"));
+        String color = p2.getCssValue("color");
         assertEquals("rgba(255, 0, 0, 1)", p2.getCssValue("color"));
     }
 
