@@ -553,19 +553,11 @@ System.out.println("Page loaded successfully");
 
 @Test
 public void testIdSelector() {
-    try {
         WebDriverWait wait = new WebDriverWait(webDriver, Duration.ofSeconds(5));
         WebElement p2 = wait.until(ExpectedConditions.presenceOfElementLocated(By.id("p2")));
-
         // Optional: ensure it's visible (not just present)
         wait.until(ExpectedConditions.visibilityOf(p2));
-
-        String color = p2.getCssValue("color");
-        assertEquals("rgba(255, 0, 0, 1)", color);
-    } catch (Exception e) {
-        System.out.println("Error checking color of #p2: " + e.getMessage());
-        System.out.println("Element #p2 was not found or not visible.");
-    }
+        assertEquals("rgba(255, 0, 0, 1)", p2.getCssValue("color"));
 }
 
 
