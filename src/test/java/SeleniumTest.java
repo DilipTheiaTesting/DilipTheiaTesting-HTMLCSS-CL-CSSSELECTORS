@@ -73,8 +73,16 @@ public class SeleniumTest {
             System.out.println("Navigating to: " + htmlUrl);
             webDriver.get(htmlUrl);
             
-            // Wait for page to load
-            wait.until(ExpectedConditions.presenceOfElementLocated(By.tagName("body")));
+
+// Wait for page to load
+wait.until(ExpectedConditions.presenceOfElementLocated(By.tagName("body")));
+
+// Force full style recalculation (fixes headless file:// lazy render bug)
+((org.openqa.selenium.JavascriptExecutor) webDriver)
+    .executeScript("void(window.getComputedStyle(document.body).color);");
+
+System.out.println("Page loaded successfully");
+
             System.out.println("Page loaded successfully");
             
             printPageInfo();
