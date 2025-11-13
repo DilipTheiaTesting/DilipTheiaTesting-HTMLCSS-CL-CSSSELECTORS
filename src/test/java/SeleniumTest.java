@@ -504,6 +504,7 @@ public class SeleniumTest {
         System.out.println("Page title: " + webDriver.getTitle());
         System.out.println("Current URL: " + webDriver.getCurrentUrl());
         System.out.println("Page source length: " + webDriver.getPageSource().length());
+        System.out.println("Page source content: " + webDriver.getPageSource());
     }
 
     private void stopHttpServer() {
