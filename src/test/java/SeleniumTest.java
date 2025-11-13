@@ -3,19 +3,16 @@
 // into the other file without altering the test methods. //
 ////////////////////////////////////////////////////////////
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.File;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.Assertions.*;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -29,69 +26,70 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.logging.LogType;
 import org.openqa.selenium.logging.LoggingPreferences;
 
-
 public class SeleniumTest {
     private WebDriver webDriver;
     private WebDriverWait wait;
+    @SuppressWarnings("unused")
     private static final Logger logger = Logger.getLogger(SeleniumTest.class.getName());
     private Process httpServerProcess;
+    @SuppressWarnings("unused")
     private String browserType; // "chrome" or "edge"
-    
+
     // Architecture and system detection
     private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
     private static final String OS_ARCH = System.getProperty("os.arch").toLowerCase();
     private static final boolean IS_ARM = OS_ARCH.contains("aarch64") || OS_ARCH.contains("arm");
     private static final boolean IS_WINDOWS = OS_NAME.contains("windows");
+    @SuppressWarnings("unused")
     private static final boolean IS_LINUX = OS_NAME.contains("linux");
     private static final boolean IS_MAC = OS_NAME.contains("mac");
-  
-    @Before
+
+    @BeforeEach
     public void setUp() {
         try {
             printEnvironmentInfo();
-            
+
             // 1. Detect browser and driver
             BrowserConfig browserConfig = detectBrowserAndDriver();
             this.browserType = browserConfig.browserType;
-            
+
             // 2. Find HTML file and determine serving method
             File htmlFile = findHtmlFile();
             String htmlUrl = determineHtmlUrl(htmlFile);
-            
+
             // 3. Create WebDriver with appropriate configuration
             webDriver = createWebDriver(browserConfig);
-            
+
             // Initialize WebDriverWait
             wait = new WebDriverWait(webDriver, Duration.ofSeconds(30));
-            
+
             // Set timeouts
             webDriver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(60));
             webDriver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
-            
+
             // Navigate to page
             System.out.println("\n=== NAVIGATING TO PAGE ===");
             System.out.println("Navigating to: " + htmlUrl);
             webDriver.get(htmlUrl);
-            
 
-// Wait for page to load
-wait.until(ExpectedConditions.presenceOfElementLocated(By.tagName("body")));
+            // Wait for page to load
+            wait.until(ExpectedConditions.presenceOfElementLocated(By.tagName("body")));
 
-// Force full style recalculation (fixes headless file:// lazy render bug)
-((org.openqa.selenium.JavascriptExecutor) webDriver)
-    .executeScript("void(window.getComputedStyle(document.body).color);");
-
-System.out.println("Page loaded successfully");
+            // Force full style recalculation (fixes headless file:// lazy render bug)
+            ((org.openqa.selenium.JavascriptExecutor) webDriver)
+                    .executeScript("void(window.getComputedStyle(document.body).color);");
 
             System.out.println("Page loaded successfully");
-            
+
+            System.out.println("Page loaded successfully");
+
             printPageInfo();
-            
+
         } catch (Exception e) {
             System.err.println("\n=== SETUP FAILED ===");
             System.err.println("Error: " + e.getMessage());
             e.printStackTrace();
-            
+
             cleanup();
             throw new RuntimeException("Setup failed", e);
         }
@@ -107,36 +105,36 @@ System.out.println("Page loaded successfully");
 
     private BrowserConfig detectBrowserAndDriver() {
         System.out.println("\n=== BROWSER AND DRIVER DETECTION ===");
-        
+
         // First check for driver in project's "driver" folder
         BrowserConfig projectDriverConfig = checkProjectDriverFolder();
         if (projectDriverConfig != null) {
             return projectDriverConfig;
         }
-        
+
         // Then check system-installed drivers
         BrowserConfig systemDriverConfig = checkSystemDrivers();
         if (systemDriverConfig != null) {
             return systemDriverConfig;
         }
-        
+
         throw new RuntimeException("No compatible browser driver found");
     }
-    
+
     private BrowserConfig checkProjectDriverFolder() {
         File driverFolder = new File("driver");
         if (!driverFolder.exists() || !driverFolder.isDirectory()) {
             System.out.println("No 'driver' folder found in project root");
             return null;
         }
-        
+
         System.out.println("Found 'driver' folder, checking for executables...");
-        
-        // Check for Edge driver first (since you mentioned x86 machines will have edge driver)
-        String[] edgeDriverNames = IS_WINDOWS ? 
-            new String[]{"msedgedriver.exe", "edgedriver.exe"} :
-            new String[]{"msedgedriver", "edgedriver"};
-            
+
+        // Check for Edge driver first (since you mentioned x86 machines will have edge
+        // driver)
+        String[] edgeDriverNames = IS_WINDOWS ? new String[] { "msedgedriver.exe", "edgedriver.exe" }
+                : new String[] { "msedgedriver", "edgedriver" };
+
         for (String driverName : edgeDriverNames) {
             File driverFile = new File(driverFolder, driverName);
             if (driverFile.exists()) {
@@ -147,12 +145,10 @@ System.out.println("Page loaded successfully");
                 }
             }
         }
-        
+
         // Check for Chrome driver
-        String[] chromeDriverNames = IS_WINDOWS ? 
-            new String[]{"chromedriver.exe"} :
-            new String[]{"chromedriver"};
-            
+        String[] chromeDriverNames = IS_WINDOWS ? new String[] { "chromedriver.exe" } : new String[] { "chromedriver" };
+
         for (String driverName : chromeDriverNames) {
             File driverFile = new File(driverFolder, driverName);
             if (driverFile.exists()) {
@@ -163,31 +159,31 @@ System.out.println("Page loaded successfully");
                 }
             }
         }
-        
+
         System.out.println("No compatible drivers found in 'driver' folder");
         return null;
     }
-    
+
     private BrowserConfig checkSystemDrivers() {
         System.out.println("Checking system-installed drivers...");
-        
+
         // Chrome driver paths (prioritized for ARM systems)
         String[] chromeDriverPaths = {
-            "/usr/bin/chromedriver",
-            "/usr/local/bin/chromedriver",
-            "/snap/bin/chromedriver",
-            System.getProperty("user.home") + "/.cache/selenium/chromedriver/linux64/chromedriver",
-            "/opt/chromedriver/chromedriver"
+                "/usr/bin/chromedriver",
+                "/usr/local/bin/chromedriver",
+                "/snap/bin/chromedriver",
+                System.getProperty("user.home") + "/.cache/selenium/chromedriver/linux64/chromedriver",
+                "/opt/chromedriver/chromedriver"
         };
-        
+
         if (IS_WINDOWS) {
-            chromeDriverPaths = new String[]{
-                "C:\\Program Files\\Google\\Chrome\\Application\\chromedriver.exe",
-                "C:\\ChromeDriver\\chromedriver.exe",
-                "chromedriver.exe" // In PATH
+            chromeDriverPaths = new String[] {
+                    "C:\\Program Files\\Google\\Chrome\\Application\\chromedriver.exe",
+                    "C:\\ChromeDriver\\chromedriver.exe",
+                    "chromedriver.exe" // In PATH
             };
         }
-        
+
         for (String driverPath : chromeDriverPaths) {
             File driverFile = new File(driverPath);
             if (driverFile.exists() && driverFile.canExecute()) {
@@ -195,14 +191,14 @@ System.out.println("Page loaded successfully");
                 return new BrowserConfig("chrome", driverPath, findChromeBinary());
             }
         }
-        
+
         // Edge driver paths
         if (IS_WINDOWS) {
             String[] edgeDriverPaths = {
-                "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedgedriver.exe",
-                "msedgedriver.exe" // In PATH
+                    "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedgedriver.exe",
+                    "msedgedriver.exe" // In PATH
             };
-            
+
             for (String driverPath : edgeDriverPaths) {
                 File driverFile = new File(driverPath);
                 if (driverFile.exists() && driverFile.canExecute()) {
@@ -211,49 +207,49 @@ System.out.println("Page loaded successfully");
                 }
             }
         }
-        
+
         return null;
     }
-    
+
     private String findChromeBinary() {
         String[] chromePaths;
-        
+
         if (IS_WINDOWS) {
-            chromePaths = new String[]{
-                "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-                "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
+            chromePaths = new String[] {
+                    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+                    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
             };
         } else if (IS_MAC) {
-            chromePaths = new String[]{
-                "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+            chromePaths = new String[] {
+                    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
             };
         } else {
-            chromePaths = new String[]{
-                "/usr/bin/chromium-browser",
-                "/usr/bin/chromium",
-                "/usr/bin/google-chrome",
-                "/snap/bin/chromium"
+            chromePaths = new String[] {
+                    "/usr/bin/chromium-browser",
+                    "/usr/bin/chromium",
+                    "/usr/bin/google-chrome",
+                    "/snap/bin/chromium"
             };
         }
-        
+
         for (String path : chromePaths) {
             if (new File(path).exists()) {
                 System.out.println("Found Chrome binary: " + path);
                 return path;
             }
         }
-        
+
         System.out.println("Chrome binary not found, using default");
         return null;
     }
-    
+
     private String findEdgeBinary() {
         if (IS_WINDOWS) {
             String[] edgePaths = {
-                "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
-                "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe"
+                    "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+                    "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe"
             };
-            
+
             for (String path : edgePaths) {
                 if (new File(path).exists()) {
                     System.out.println("Found Edge binary: " + path);
@@ -261,11 +257,11 @@ System.out.println("Page loaded successfully");
                 }
             }
         }
-        
+
         System.out.println("Edge binary not found, using default");
         return null;
     }
-    
+
     private void makeExecutable(File file) {
         if (!file.canExecute()) {
             try {
@@ -276,12 +272,12 @@ System.out.println("Page loaded successfully");
             }
         }
     }
-    
+
     private File findHtmlFile() {
         String[] possibleHtmlPaths = {
-            "StyledPage.html"
+                "StyledPage.html"
         };
-        
+
         for (String htmlPath : possibleHtmlPaths) {
             File testFile = new File(htmlPath);
             if (testFile.exists()) {
@@ -289,11 +285,11 @@ System.out.println("Page loaded successfully");
                 return testFile;
             }
         }
-        
-        throw new RuntimeException("Could not find StyledPage.html in any expected location: " + 
-            Arrays.toString(possibleHtmlPaths));
+
+        throw new RuntimeException("Could not find StyledPage.html in any expected location: " +
+                Arrays.toString(possibleHtmlPaths));
     }
-    
+
     private String determineHtmlUrl(File htmlFile) {
         // Try to use HTTP server first if Python3 is available
         if (isPython3Available()) {
@@ -305,11 +301,11 @@ System.out.println("Page loaded successfully");
         } else {
             System.out.println("Python3 not available, using file URL");
         }
-        
+
         // Fallback to file URL
         return "file://" + htmlFile.getAbsolutePath();
     }
-    
+
     private boolean isPython3Available() {
         try {
             Process process = new ProcessBuilder("python3", "--version").start();
@@ -321,7 +317,7 @@ System.out.println("Page loaded successfully");
         } catch (Exception e) {
             // Ignore
         }
-        
+
         // Also try "python" on Windows
         if (IS_WINDOWS) {
             try {
@@ -335,34 +331,35 @@ System.out.println("Page loaded successfully");
                 // Ignore
             }
         }
-        
+
         System.out.println("Python3/Python not available");
         return false;
     }
-    
+
+    @SuppressWarnings("deprecation")
     private String startHttpServer(File htmlFile) throws Exception {
-        int port = 8000 + (int)(Math.random() * 1000);
+        int port = 8000 + (int) (Math.random() * 1000);
         String directory = htmlFile.getParent();
         String fileName = htmlFile.getName();
-        
+
         System.out.println("Starting HTTP server on port " + port);
-        
+
         String pythonCmd = IS_WINDOWS ? "python" : "python3";
         ProcessBuilder pb = new ProcessBuilder(pythonCmd, "-m", "http.server", String.valueOf(port));
         pb.directory(new File(directory));
         pb.redirectErrorStream(true);
-        
+
         httpServerProcess = pb.start();
-        
+
         // Wait for server to start
         Thread.sleep(3000);
-        
+
         if (!httpServerProcess.isAlive()) {
             throw new RuntimeException("HTTP server failed to start");
         }
-        
+
         String url = "http://localhost:" + port + "/" + fileName;
-        
+
         // Test connectivity
         for (int i = 0; i < 10; i++) {
             try {
@@ -373,7 +370,7 @@ System.out.println("Page loaded successfully");
                 connection.setRequestMethod("HEAD");
                 int responseCode = connection.getResponseCode();
                 connection.disconnect();
-                
+
                 if (responseCode == 200) {
                     System.out.println("HTTP server ready: " + url);
                     return url;
@@ -385,153 +382,154 @@ System.out.println("Page loaded successfully");
                 Thread.sleep(1000);
             }
         }
-        
+
         throw new RuntimeException("HTTP server failed to respond");
     }
-    
+
     private WebDriver createWebDriver(BrowserConfig config) {
         System.out.println("\n=== CREATING WEBDRIVER ===");
         System.out.println("Browser: " + config.browserType);
         System.out.println("Driver: " + config.driverPath);
         System.out.println("Binary: " + config.binaryPath);
-        
+
         if ("edge".equals(config.browserType)) {
             return createEdgeDriver(config);
         } else {
             return createChromeDriver(config);
         }
     }
-    
+
     private WebDriver createChromeDriver(BrowserConfig config) {
         // Set driver path
         System.setProperty("webdriver.chrome.driver", config.driverPath);
-        
+
         ChromeOptions options = new ChromeOptions();
-        
+
         // Set binary if found
         if (config.binaryPath != null) {
             options.setBinary(config.binaryPath);
         }
-        
+
         // Add arguments based on architecture and environment
         options.addArguments(getChromeArguments());
-        
+
         // Enable logging
         LoggingPreferences logPrefs = new LoggingPreferences();
         logPrefs.enable(LogType.BROWSER, Level.ALL);
         options.setCapability("goog:loggingPrefs", logPrefs);
-        
+
         // Create service
         ChromeDriverService.Builder serviceBuilder = new ChromeDriverService.Builder()
-            .usingDriverExecutable(new File(config.driverPath))
-            .withTimeout(Duration.ofSeconds(30));
-        
+                .usingDriverExecutable(new File(config.driverPath))
+                .withTimeout(Duration.ofSeconds(30));
+
         ChromeDriverService service = serviceBuilder.build();
-        
+
         return new ChromeDriver(service, options);
     }
-    
+
     private WebDriver createEdgeDriver(BrowserConfig config) {
         // Set driver path
         System.setProperty("webdriver.edge.driver", config.driverPath);
-        
+
         EdgeOptions options = new EdgeOptions();
-        
+
         // Set binary if found
         if (config.binaryPath != null) {
             options.setBinary(config.binaryPath);
         }
-        
+
         // Add arguments based on architecture and environment
         options.addArguments(getEdgeArguments());
-        
+
         // Enable logging
         LoggingPreferences logPrefs = new LoggingPreferences();
         logPrefs.enable(LogType.BROWSER, Level.ALL);
         options.setCapability("ms:loggingPrefs", logPrefs);
-        
+
         // Create service
         EdgeDriverService.Builder serviceBuilder = new EdgeDriverService.Builder()
-            .usingDriverExecutable(new File(config.driverPath))
-            .withTimeout(Duration.ofSeconds(30));
-        
+                .usingDriverExecutable(new File(config.driverPath))
+                .withTimeout(Duration.ofSeconds(30));
+
         EdgeDriverService service = serviceBuilder.build();
-        
+
         return new EdgeDriver(service, options);
     }
-    
+
     private String[] getChromeArguments() {
         return getCommonBrowserArguments();
     }
-    
+
     private String[] getEdgeArguments() {
         return getCommonBrowserArguments();
     }
-    
+
     private String[] getCommonBrowserArguments() {
         String[] baseArgs = {
-            "--headless=new",
-            "--no-sandbox",
-            "--disable-dev-shm-usage",
-            "--disable-gpu",
-            "--window-size=1920,1080",
-            "--disable-extensions",
-            "--disable-web-security",
-            "--allow-file-access-from-files",
-            "--allow-running-insecure-content",
-            "--user-data-dir=/tmp/browser-test-" + System.currentTimeMillis(),
-            "--disable-features=TranslateUI,VizDisplayCompositor",
-            "--disable-background-timer-throttling",
-            "--disable-backgrounding-occluded-windows",
-            "--disable-renderer-backgrounding"
+                "--headless=new",
+                "--no-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-gpu",
+                "--window-size=1920,1080",
+                "--disable-extensions",
+                "--disable-web-security",
+                "--allow-file-access-from-files",
+                "--allow-running-insecure-content",
+                "--user-data-dir=/tmp/browser-test-" + System.currentTimeMillis(),
+                "--disable-features=TranslateUI,VizDisplayCompositor",
+                "--disable-background-timer-throttling",
+                "--disable-backgrounding-occluded-windows",
+                "--disable-renderer-backgrounding"
         };
-        
+
         // Add ARM-specific arguments
         if (IS_ARM) {
             String[] armArgs = {
-                "--disable-features=VizDisplayCompositor",
-                "--use-gl=swiftshader",
-                "--disable-software-rasterizer"
+                    "--disable-features=VizDisplayCompositor",
+                    "--use-gl=swiftshader",
+                    "--disable-software-rasterizer"
             };
-            
+
             String[] combined = new String[baseArgs.length + armArgs.length];
             System.arraycopy(baseArgs, 0, combined, 0, baseArgs.length);
             System.arraycopy(armArgs, 0, combined, baseArgs.length, armArgs.length);
             return combined;
         }
-        
+
         return baseArgs;
     }
-    
+
     private void printPageInfo() {
         System.out.println("Page title: " + webDriver.getTitle());
         System.out.println("Current URL: " + webDriver.getCurrentUrl());
         System.out.println("Page source length: " + webDriver.getPageSource().length());
     }
-    
+
     private void stopHttpServer() {
         if (httpServerProcess != null) {
             try {
                 System.out.println("Stopping HTTP server...");
                 httpServerProcess.destroy();
-                
+
                 boolean terminated = httpServerProcess.waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
                 if (!terminated) {
                     httpServerProcess.destroyForcibly();
                 }
-                
+
                 httpServerProcess = null;
                 System.out.println("HTTP server stopped");
             } catch (Exception e) {
                 System.out.println("Warning: Error stopping HTTP server: " + e.getMessage());
                 try {
                     httpServerProcess.destroyForcibly();
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
                 httpServerProcess = null;
             }
         }
     }
-    
+
     private void cleanup() {
         stopHttpServer();
         if (webDriver != null) {
@@ -544,50 +542,40 @@ System.out.println("Page loaded successfully");
         }
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         System.out.println("\n=== TEARDOWN ===");
         cleanup();
         System.out.println("Teardown completed");
     }
 
-@Test
-public void testIdSelector() {
-        WebDriverWait wait = new WebDriverWait(webDriver, Duration.ofSeconds(5));
-        WebElement p2 = wait.until(ExpectedConditions.presenceOfElementLocated(By.id("p2")));
-        // Optional: ensure it's visible (not just present)
-        wait.until(ExpectedConditions.visibilityOf(p2));
-        assertEquals("rgba(255, 0, 0, 1)", p2.getCssValue("color"));
-}
-
-
-
-
-
     @Test
-    public void testClassSelector() {
-        List<WebElement> elements = webDriver.findElements(By.className("class2"));
-        for(WebElement element: elements) {
-            assertEquals("rgba(0, 0, 255, 1)", element.getCssValue("color"));
-        }
+    public void testH1Color() {
+        WebElement h1 = webDriver.findElement(By.tagName("h1"));
+        String color = h1.getCssValue("color");
+        assertTrue(color.contains("0, 0, 255"), "Expected <h1> to be blue.");
     }
 
-
     @Test
-    public void testElementSelector() {
-        List<WebElement> elements = webDriver.findElements(By.cssSelector("h2"));
-        for(WebElement element: elements) {
-            assertEquals("rgba(0, 255, 255, 1)", element.getCssValue("color"));
-        }
+    public void testHighlightBackground() {
+        WebElement highlight = webDriver.findElement(By.className("highlight"));
+        String bg = highlight.getCssValue("background-color");
+        assertTrue(bg.contains("255, 255, 0"), "Expected .highlight to have yellow background.");
     }
 
-    
+    @Test
+    public void testMainTitleUppercase() {
+        WebElement title = webDriver.findElement(By.id("main-title"));
+        String transform = title.getCssValue("text-transform");
+        assertEquals("uppercase", transform, "Expected #main-title text to be uppercase.");
+    }
+
     // Helper class to store browser configuration
     private static class BrowserConfig {
         final String browserType;
         final String driverPath;
         final String binaryPath;
-        
+
         BrowserConfig(String browserType, String driverPath, String binaryPath) {
             this.browserType = browserType;
             this.driverPath = driverPath;
@@ -596,4 +584,3 @@ public void testIdSelector() {
     }
 
 }
-
