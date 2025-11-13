@@ -1,1 +1,26 @@
+    /*
+    Welcome to the CSS Selectors Practice Lab!
+    In this exercise, you'll learn how to select and style HTML elements
+    using element, class, and ID selectors.
+    */
+
+      /* ------------------------------------------------------------
+       TODO 1: Style all <h1> elements to be blue.
+       ------------------------------------------------------------ */
+      h1 {
+        color: blue;
+      }
+      /* ------------------------------------------------------------
+       TODO 2: Style elements with class "highlight" to have a
+       light yellow background.
+       ------------------------------------------------------------ */
+      .highlight {
+        background-color: yellow;
+      }
+      /* ------------------------------------------------------------
+       TODO 3: Style the element with ID "main-title" to be uppercase.
+       ------------------------------------------------------------ */
+      #main-title {
+        text-transform: uppercase;
+      }
 
